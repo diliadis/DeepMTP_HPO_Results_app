@@ -84,8 +84,8 @@ averaging_option = st.selectbox(
 
 
 # checkboxes for dynamically applying log scaling the two axis
-log_x_axis = st.checkbox("Scale x-axis (time in seconds)")
-log_y_axis = st.checkbox("Scale y-axis (time in seconds)")
+log_x_axis = st.checkbox("Scale x-axis")
+log_y_axis = st.checkbox("Scale y-axis")
 # add_x_axis_slider = st.checkbox("Enable custom range on x-axis")
 header_cols = [c for c in st.columns(6)]
 header_cols[1].header("Validation " + metric_option + "_" + averaging_option)

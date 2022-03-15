@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import pandas as pd
 import pickle
 import plotly.graph_objects as go
 
@@ -30,6 +31,11 @@ def get_data_to_plot(temp_dir):
         hyperopt_performance_arr_max,
         hyperopt_performance_arr_std,
     )
+
+
+@st.experimental_memo
+def get_dataset_info(temp_dir):
+    return pd.read_csv(temp_dir, sep=", ")
 
 
 def get_file_structure(base_path):
@@ -66,26 +72,35 @@ st.set_page_config(layout="wide")
 # get a dictionary of dictionaries with the file structure of all the data to be plotted
 dir_structure_dict = get_file_structure(base_path)
 
-st.title("Hyperopt benchmarks for DeepMTP")
+st.sidebar.title("Hyperopt benchmarks for DeepMTP")
 
 # dataset selector
-dataset_option = st.selectbox("Select a dataset", list(dir_structure_dict.keys()))
+dataset_option = st.sidebar.selectbox(
+    "Select a dataset", list(dir_structure_dict.keys())
+)
+
+st.header("Basic Dataset info")
+dataset_info_df = get_dataset_info("dataset_info.csv")
+
+st.dataframe(dataset_info_df[dataset_info_df["dataset_name"] == dataset_option])
+
+st.markdown("""---""")
 
 # performance metric selector, conditioned on the selected dataset
-metric_option = st.selectbox(
+metric_option = st.sidebar.selectbox(
     "Select a metric", list(dir_structure_dict[dataset_option].keys())
 )
 
 # performance averaging selector, conditioned on the selected dataset and performance metric
-averaging_option = st.selectbox(
+averaging_option = st.sidebar.selectbox(
     "Averaging method option",
     list(dir_structure_dict[dataset_option][metric_option].keys()),
 )
 
 
 # checkboxes for dynamically applying log scaling the two axis
-log_x_axis = st.checkbox("Scale x-axis")
-log_y_axis = st.checkbox("Scale y-axis")
+log_x_axis = st.sidebar.checkbox("Scale x-axis")
+log_y_axis = st.sidebar.checkbox("Scale y-axis")
 # add_x_axis_slider = st.checkbox("Enable custom range on x-axis")
 header_cols = [c for c in st.columns(6)]
 header_cols[1].header("Validation " + metric_option + "_" + averaging_option)

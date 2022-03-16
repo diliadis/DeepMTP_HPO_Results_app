@@ -78,6 +78,7 @@ dependencies:
     - pytz-deprecation-shim==0.1.0.post0
     - pyzmq==22.3.0
     - requests==2.27.1
+    - scipy==1.8.0
     - semver==2.13.0
     - send2trash==1.8.0
     - six==1.16.0

@@ -249,6 +249,7 @@ for idx, mode in enumerate(["val", "test"]):
     # header_cols[idx].header(mode + " performance")
     plot_cols[idx].plotly_chart(fig, use_container_width=True)
 
+resolution = st.slider("Define the sampling resolution: ", 10, 1000, 500)
 
 rank_cols = [c for c in st.columns(2)]
 for idx, mode in enumerate(["val", "test"]):
@@ -290,7 +291,7 @@ for idx, mode in enumerate(["val", "test"]):
         interpolator_per_HPO_method[hp_name] = interp1d(
             hyperopt_runtime_arr_mean, hyperopt_performance_arr_mean, bounds_error=False
         )
-    resolution = 500
+    # resolution = 500
     # calculate the min and max time points across all HPO methods
     min_x = min([data[0][0] for HPO_name, data in data_per_HPO_method.items()])
     max_x = max([data[0][-1] for HPO_name, data in data_per_HPO_method.items()])

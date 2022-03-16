@@ -72,7 +72,7 @@ st.set_page_config(layout="wide")
 # get a dictionary of dictionaries with the file structure of all the data to be plotted
 dir_structure_dict = get_file_structure(base_path)
 
-st.sidebar.title("Hyperopt benchmarks for DeepMTP")
+st.sidebar.title("HPO benchmarks for DeepMTP")
 
 # dataset selector
 dataset_option = st.sidebar.selectbox(

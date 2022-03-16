@@ -3,6 +3,32 @@ import os
 import pandas as pd
 import pickle
 import plotly.graph_objects as go
+from scipy.interpolate import interp1d
+from scipy.stats import rankdata
+import numpy as np
+
+
+def get_ranking(
+    hyperopt_runtime_arr_mean,
+    hyperopt_performance_arr_mean,
+    hyperopt_performance_arr_min,
+    hyperopt_performance_arr_max,
+    hyperopt_performance_arr_std,
+):
+    interpolated_per_HPO_method = {}
+    interpolator_per_HPO_method = {}
+    data_per_HPO_method = {}
+
+    data_per_HPO_method[hp_name] = [
+        hyperopt_runtime_arr_mean,
+        hyperopt_performance_arr_mean,
+        hyperopt_performance_arr_min,
+        hyperopt_performance_arr_max,
+        hyperopt_performance_arr_std,
+    ]
+    interpolator_per_HPO_method[hp_name] = interp1d(
+        hyperopt_runtime_arr_mean, hyperopt_performance_arr_mean, bounds_error=False
+    )
 
 
 @st.experimental_memo
@@ -222,3 +248,93 @@ for idx, mode in enumerate(["val", "test"]):
         fig.update_yaxes(exponentformat="power", type="log")
     # header_cols[idx].header(mode + " performance")
     plot_cols[idx].plotly_chart(fig, use_container_width=True)
+
+
+rank_cols = [c for c in st.columns(2)]
+for idx, mode in enumerate(["val", "test"]):
+    interpolated_per_HPO_method = {}
+    interpolator_per_HPO_method = {}
+    data_per_HPO_method = {}
+    for hp_name in list(
+        dir_structure_dict[dataset_option][metric_option][averaging_option]
+    ):
+        # print(hp_name)
+        temp_dir = (
+            base_path
+            + dataset_option
+            + "/"
+            + metric_option
+            + "/"
+            + averaging_option
+            + "/"
+            + hp_name
+            + "/"
+            + mode
+        )
+
+        (
+            hyperopt_runtime_arr_mean,
+            hyperopt_performance_arr_mean,
+            hyperopt_performance_arr_min,
+            hyperopt_performance_arr_max,
+            hyperopt_performance_arr_std,
+        ) = get_data_to_plot(temp_dir)
+
+        data_per_HPO_method[hp_name] = [
+            hyperopt_runtime_arr_mean,
+            hyperopt_performance_arr_mean,
+            hyperopt_performance_arr_min,
+            hyperopt_performance_arr_max,
+            hyperopt_performance_arr_std,
+        ]
+        interpolator_per_HPO_method[hp_name] = interp1d(
+            hyperopt_runtime_arr_mean, hyperopt_performance_arr_mean, bounds_error=False
+        )
+    resolution = 500
+    # calculate the min and max time points across all HPO methods
+    min_x = min([data[0][0] for HPO_name, data in data_per_HPO_method.items()])
+    max_x = max([data[0][-1] for HPO_name, data in data_per_HPO_method.items()])
+    global_x = np.linspace(min_x, max_x, resolution)
+
+    hpo_names = list(
+        dir_structure_dict[dataset_option][metric_option][averaging_option]
+    )
+
+    for hp_name in hpo_names:
+        interpolated_per_HPO_method[hp_name] = interpolator_per_HPO_method[hp_name](
+            global_x
+        )
+
+    raw_ratings_arr = np.array([d for d in interpolated_per_HPO_method.values()])
+    rankings_arr = rankdata(-1 * raw_ratings_arr, axis=0, method="min")
+
+    rankings_arr = rankings_arr.astype(float)
+    rankings_arr[np.isnan(raw_ratings_arr)] = np.nan
+
+    one_pos = np.where(rankings_arr == 1)
+    two_pos = np.where(rankings_arr == 2)
+    four_pos = np.where(rankings_arr == 4)
+    five_pos = np.where(rankings_arr == 5)
+
+    rankings_arr[one_pos] = 5
+    rankings_arr[two_pos] = 4
+    rankings_arr[four_pos] = 2
+    rankings_arr[five_pos] = 1
+
+    fig = go.Figure()
+
+    fig.update_layout(
+        xaxis=dict(title="Wall clock time (seconds)"), yaxis=dict(title="ranking"),
+    )
+
+    for i in range(rankings_arr.shape[0]):
+        nan_ids = np.isnan(rankings_arr[i, :])
+        fig.add_trace(
+            go.Scatter(
+                x=global_x[~nan_ids],
+                y=rankings_arr[i, ~nan_ids],
+                mode="lines+markers",
+                name=hpo_names[i],
+            )
+        )
+    rank_cols[idx].plotly_chart(fig, use_container_width=True)

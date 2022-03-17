@@ -249,7 +249,7 @@ for idx, mode in enumerate(["val", "test"]):
     # header_cols[idx].header(mode + " performance")
     plot_cols[idx].plotly_chart(fig, use_container_width=True)
 
-resolution = st.slider("Define the sampling resolution: ", 10, 1000, 500)
+resolution = st.slider("Define the sampling resolution: ", 10, 1000, 100)
 
 rank_cols = [c for c in st.columns(2)]
 for idx, mode in enumerate(["val", "test"]):

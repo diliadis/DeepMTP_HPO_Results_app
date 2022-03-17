@@ -289,8 +289,12 @@ for idx, mode in enumerate(["val", "test"]):
             hyperopt_performance_arr_std,
         ]
         interpolator_per_HPO_method[hp_name] = interp1d(
-            hyperopt_runtime_arr_mean, hyperopt_performance_arr_mean, bounds_error=False
+            hyperopt_runtime_arr_mean,
+            hyperopt_performance_arr_mean,
+            bounds_error=False,
+            fill_value=(np.nan, hyperopt_performance_arr_mean[-1]),
         )
+
     # resolution = 500
     # calculate the min and max time points across all HPO methods
     min_x = min([data[0][0] for HPO_name, data in data_per_HPO_method.items()])
@@ -307,20 +311,30 @@ for idx, mode in enumerate(["val", "test"]):
         )
 
     raw_ratings_arr = np.array([d for d in interpolated_per_HPO_method.values()])
-    rankings_arr = rankdata(-1 * raw_ratings_arr, axis=0, method="min")
+    if metric_option in [
+        "auroc",
+        "aupr",
+        "f1_score",
+        "recall",
+        "precision",
+        "accuracy",
+    ]:
+        rankings_arr = rankdata(-1 * raw_ratings_arr, axis=0, method="min")
+    else:
+        rankings_arr = rankdata(raw_ratings_arr, axis=0, method="min")
 
     rankings_arr = rankings_arr.astype(float)
     rankings_arr[np.isnan(raw_ratings_arr)] = np.nan
 
-    one_pos = np.where(rankings_arr == 1)
-    two_pos = np.where(rankings_arr == 2)
-    four_pos = np.where(rankings_arr == 4)
-    five_pos = np.where(rankings_arr == 5)
+    # one_pos = np.where(rankings_arr == 1)
+    # two_pos = np.where(rankings_arr == 2)
+    # four_pos = np.where(rankings_arr == 4)
+    # five_pos = np.where(rankings_arr == 5)
 
-    rankings_arr[one_pos] = 5
-    rankings_arr[two_pos] = 4
-    rankings_arr[four_pos] = 2
-    rankings_arr[five_pos] = 1
+    # rankings_arr[one_pos] = 5
+    # rankings_arr[two_pos] = 4
+    # rankings_arr[four_pos] = 2
+    # rankings_arr[five_pos] = 1
 
     fig = go.Figure()
 
